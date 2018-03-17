@@ -19,7 +19,7 @@ rm -rf $CMD_batch
 #######################################################################################################
 cat<<EOC >$CMD_batch
 #!/bin/bash
-#COBALT -t ${hr}:31:00
+#COBALT -t ${hr}:00:00
 #COBALT -n $N
 #COBALT --attrs mcdram=cache:numa=quad:ssds=required:ssd_size=10
 #COBALT -A AD_Brain_Imaging
@@ -82,7 +82,7 @@ ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$threads
 #command & pid=\$! ; sleep 5 && kill $pid
 recon-all -all -hippocampal-subfields-T1 -s ${subject}_${sess} -i ${T1} -parallel -openmp ${threads} & pid=\$!
 
-sleep $((${hr}*3600)) && kill \$pid
+sleep $((${hr}*3600-31*60)) && kill \$pid
 
 
 #################   STAGING OUT#################################################

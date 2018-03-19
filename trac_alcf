@@ -44,9 +44,9 @@ do
 
   subject=`echo $s | cut -d "_" -f1`
   sess=`echo $s | cut -d "_" -f2`
-  dwi=/lus/theta-fs0/projects/AD_Brain_Imaging/anal/NKI/data/$subject/$sess/anat/${s}.nii.gz
-  bvec=/lus/theta-fs0/projects/AD_Brain_Imaging/anal/NKI/data/$subject/$sess/anat/${s}.bvec
-  bval=/lus/theta-fs0/projects/AD_Brain_Imaging/anal/NKI/data/$subject/$sess/anat/${s}.bval
+  dwi=/lus/theta-fs0/projects/AD_Brain_Imaging/anal/NKI/data/$subject/$sess/dwi/${s}.nii.gz
+  bvec=/lus/theta-fs0/projects/AD_Brain_Imaging/anal/NKI/data/$subject/$sess/dwi/${s}.bvec
+  bval=/lus/theta-fs0/projects/AD_Brain_Imaging/anal/NKI/data/$subject/$sess/dwi/${s}.bval
 
   SUBJECT=${subject}_${sess}
 #echo ${SUBJECT}
@@ -54,7 +54,7 @@ do
 cat<<EOC >$CMD
 #!/bin/bash
 source ~/.bashrc
-workingdir=/lus/theta-fs0/projects/AD_Brain_Imaging/anal/HBN/fs/${s}/dwi_mr_${threads}
+workingdir=/lus/theta-fs0/projects/AD_Brain_Imaging/anal/NKI/$subject/$sess/dwi/dwi_mr
 rm -rf \$workingdir
 mkdir -p \$workingdir
 #cd \$workingdir
@@ -69,15 +69,15 @@ echo current folder is \`pwd\`
 ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$threads
 
 #%% 1. setup %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-cp -f /lus/theta-fs0/projects/AD_Brain_Imaging/anal/HBN/fs/${s}/dwi/*dir_dwi.nii.gz ./dti.nii.gz
-cp -f /lus/theta-fs0/projects/AD_Brain_Imaging/anal/HBN/fs/${s}/dwi/*dir_dwi.bvec ./dti.bvec
-cp -f /lus/theta-fs0/projects/AD_Brain_Imaging/anal/HBN/fs/${s}/dwi/*dir_dwi.bval ./dti.bval
-cp -f /lus/theta-fs0/projects/AD_Brain_Imaging/anal/HBN/fs/${s}/dwi/*dir_dwi.json ./dti.json
+cp -f $dwi ./dti.nii.gz
+cp -f $bvec ./dti.bvec
+cp -f $bval ./dti.bval
+#cp -f /lus/theta-fs0/projects/AD_Brain_Imaging/anal/HBN/fs/${s}/dwi/*dir_dwi.json ./dti.json
 
-cp -f /lus/theta-fs0/projects/AD_Brain_Imaging/anal/HBN/fs/${s}/fmap/*AP_acq-dwi_epi.json ./dwi_fmap_AP.json
-cp -f /lus/theta-fs0/projects/AD_Brain_Imaging/anal/HBN/fs/${s}/fmap/*AP_acq-dwi_epi.nii.gz ./dwi_fmap_AP.nii.gz
-cp -f /lus/theta-fs0/projects/AD_Brain_Imaging/anal/HBN/fs/${s}/fmap/*PA_acq-dwi_epi.json ./dwi_fmap_PA.json
-cp -f /lus/theta-fs0/projects/AD_Brain_Imaging/anal/HBN/fs/${s}/fmap/*PA_acq-dwi_epi.nii.gz ./dwi_fmap_PA.nii.gz
+#cp -f /lus/theta-fs0/projects/AD_Brain_Imaging/anal/HBN/fs/${s}/fmap/*AP_acq-dwi_epi.json ./dwi_fmap_AP.json
+#cp -f /lus/theta-fs0/projects/AD_Brain_Imaging/anal/HBN/fs/${s}/fmap/*AP_acq-dwi_epi.nii.gz ./dwi_fmap_AP.nii.gz
+#cp -f /lus/theta-fs0/projects/AD_Brain_Imaging/anal/HBN/fs/${s}/fmap/*PA_acq-dwi_epi.json ./dwi_fmap_PA.json
+#cp -f /lus/theta-fs0/projects/AD_Brain_Imaging/anal/HBN/fs/${s}/fmap/*PA_acq-dwi_epi.nii.gz ./dwi_fmap_PA.nii.gz
 
 
 #cp /ifs/scratch/pimri/posnerlab/1anal/adni/data/nii/${s}_*DTI.bvec_tp ./dti.bvec_tp
@@ -93,7 +93,6 @@ rm -rf *nii
             -datatype float32 -stride 0,0,0,1 -nthreads ${threads}
 sleep 0.1
 
-    #pigz --fast -b 1280 -force mr_dwi.mif
 #fi
 # 2. denoising (time:1m)
 #if [ ! -e mr_dwi_denoised.mif ];then
@@ -101,7 +100,6 @@ sleep 0.1
     time dwidenoise mr_dwi.mif -force mr_dwi_denoised.mif -nthreads ${threads}
  sleep 0.1
 
-   #pigz --fast -b 1280 -force mr_dwi_denoised.mif
 #fi
 # 3. gibss ringing (time:0.5m)
 #if [ ! -e mr_dwi_denoised_gibbs.mif ];then
@@ -113,34 +111,32 @@ sleep 0.1
 #fi
 # 4. dwipreproc -eddy current (time:33m)
 #if [ ! -e mr_dwi_denoised_gibbs_crop_preproc.mif ];then
-    mrcat dwi_fmap_AP.nii.gz dwi_fmap_PA.nii.gz b0s.mif -force -axis 3 -nthreads ${threads}
-    #pigz --fast -b 1280 -force b0s.mif
+#    mrcat dwi_fmap_AP.nii.gz dwi_fmap_PA.nii.gz b0s.mif -force -axis 3 -nthreads ${threads}
 
-    dim2=\`mrinfo mr_dwi_denoised_gibbs.mif | grep "x 81 x"\`
-    str=\${dim2}str
-    if [ "\${str}" = str ];then echo "##########nocropping needed###########"
-		cp b0s.mif b0s_crop.mif
-		cp mr_dwi_denoised_gibbs.mif mr_dwi_denoised_gibbs_crop.mif
-    else mrcrop b0s.mif b0s_crop.mif -axis 2 1 80 -force -quiet -nthreads ${threads}
-sleep 0.1
+#    dim2=\`mrinfo mr_dwi_denoised_gibbs.mif | grep "x 81 x"\`
+#    str=\${dim2}str
+#    if [ "\${str}" = str ];then echo "##########nocropping needed###########"
+#		cp b0s.mif b0s_crop.mif
+#		cp mr_dwi_denoised_gibbs.mif mr_dwi_denoised_gibbs_crop.mif
+#    else mrcrop b0s.mif b0s_crop.mif -axis 2 1 80 -force -quiet -nthreads ${threads}
+#sleep 0.1
 
-         mrcrop mr_dwi_denoised_gibbs.mif mr_dwi_denoised_gibbs_crop.mif -axis 2 1 80 -nthreads ${threads}
-sleep 0.1
+#         mrcrop mr_dwi_denoised_gibbs.mif mr_dwi_denoised_gibbs_crop.mif -axis 2 1 80 -nthreads ${threads}
+#sleep 0.1
 
-    fi
+#    fi
 
-    time dwipreproc mr_dwi_denoised_gibbs_crop.mif mr_dwi_denoised_gibbs_crop_preproc.mif \
--json_import dti.json \
--se_epi b0s_crop.mif \
+    time dwipreproc mr_dwi_denoised_gibbs.mif mr_dwi_denoised_gibbs_preproc.mif \
 -pe_dir AP \
--rpe_pair \
--fslgrad dti.bvec dti.bval \
+-rpe_none \
 -eddy_options " --repol " \
 -nthreads ${threads} \
 -nocleanup -force
  sleep 0.1
 
-  #pigz --fast -b 1280 -f mr_dwi_denoised_gibbs_crop_preproc.mif
+ #-fslgrad dti.bvec dti.bval \
+
+
 ##########-readout_time 0.0691181 \#############??????????????????????????????\
 #fi
 
@@ -157,7 +153,6 @@ sleep 0.1
      #pigz --fast -b 1280 -f mr_meanb0_nonbiascorr.nii
      bet2 mr_meanb0_nonbiascorr mr_meanb0_nonbiascorr_bet2 -m -f 0.1 -v
 sleep 0.1
-
 
      dwi2mask mr_dwi_denoised_gibbs_crop_preproc.mif mr_dwi_mask.mif -force -nthreads ${threads}
             #pigz --fast -b 1280 -f mr_dwi_mask.mif

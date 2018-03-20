@@ -1,0 +1,50 @@
+#!/bin/bash
+# this script is just for eddy_cuda
+
+currentdir=/lustre/atlas/proj-shared/med104/data/NKI/eddy_nki
+#nki=/lus/theta-fs0/projects/AD_Brain_Imaging/anal/NKI/data
+
+CMD_batch=/lustre/atlas/proj-shared/med104/data/NKI/embarc/job/cmd1.batch.trac1.${list}
+rm -rf $CMD_batch
+
+#######################################################################################################
+cat<<EOC >$CMD_batch
+#!/bin/bash
+#COBALT -t 10:00:00
+#COBALT -n $N
+#COBALT --attrs mcdram=cache:numa=quad:ssds=required:ssd_size=64
+#COBALT -A AD_Brain_Imaging
+#COBALT -M jiook.cha@nyspi.columbia.edu
+#COBALT ATP_ENABLED=1
+echo start............................................
+
+# WE DON'T NEED THE FOLLOWING VARIABLES FOR NOW#################################
+#export n_nodes=\$COBALT_JOBSIZE
+#export n_mpi_ranks_per_node=1
+#export n_mpi_ranks=1
+#export n_openmp_threads_per_rank=64
+#export n_hyperthreads_per_core=4
+EOC
+
+#######################################################################################################
+
+
+#1.
+echo converting && time mrconvert *dwi.nii.gz -force mr_dwi.mif -fslgrad *dwi.bvec *dwi.bval \
+            -datatype float32 -stride 0,0,0,1
+
+# 2. denoising (time:1m)
+echo denoiseing && time dwidenoise mr_dwi.mif -force mr_dwi_denoised.mif
+
+# 3. eddy (time:60m)
+echo eddy && time dwipreproc mr_dwi_denoised_gibbs_crop.mif mr_dwi_denoised_gibbs_crop_preproc.mif \
+-pe_dir AP \
+-rpe_none \
+-eddy_options " --niter=8 --fwhm=10,8,4,2,0,0,0,0 --repol --mporder=6 \
+              --slspec=../my_slspec.txt --s2v_niter=10 --s2v_lambda=1 \
+              --s2v_interp=trilinear -v " \
+-nocleanup -force -debug
+
+if [ -e mr_dwi_denoised_gibbs_crop_preproc.mif ];then echo eddy is complete
+else echo is NOT complete
+fi

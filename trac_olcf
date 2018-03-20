@@ -68,9 +68,9 @@ echo eddy && time dwipreproc $s/mr_dwi_denoised_gibbs.mif $s/mr_dwi_denoised_gib
             -pe_dir AP \
             -rpe_none \
             -eddy_options " --niter=8 --fwhm=10,8,4,2,0,0,0,0 --repol --mporder=6 \
-              --slspec=$slspec --s2v_niter=10 --s2v_lambda=1 \
+              --slspec=$slspec --s2v_niter=5 --s2v_lambda=1 \
               --s2v_interp=trilinear -v " \
-            -nocleanup -force -debug
+            -nocleanup -force -debug -cuda
 
 if [ -e $s/mr_dwi_denoised_gibbs_crop_preproc.mif ];then echo eddy is complete
 else echo is NOT complete

@@ -92,4 +92,4 @@ echo "wait" >> $CMD_batch
 
 echo $CMD_batch
 chmod +x $CMD_batch
-echo qsub $CMD_batch
+qsub $CMD_batch

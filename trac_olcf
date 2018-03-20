@@ -26,6 +26,7 @@ OMP_NUM_THREADS=16
 echo start............................................
 
 cd /lustre/atlas/proj-shared/med104/data/NKI/eddy_nki
+
 EOC
 
 #######################################################################################################
@@ -59,8 +60,11 @@ echo converting && time mrconvert $s/*dwi.nii.gz -force $s/mr_dwi.mif -fslgrad $
 # 2. denoising (time:1m)
 echo denoiseing && time dwidenoise $s/mr_dwi.mif -force $s/mr_dwi_denoised.mif
 
+# 3. gibbs ringing
+echo gibbs rining && time mrdegibbs $s/mr_dwi_denoised.mif $s/mr_dwi_denoised_gibbs.mif -force
+
 # 3. eddy (time:60m)
-echo eddy && time dwipreproc $s/mr_dwi_denoised_gibbs_crop.mif $s/mr_dwi_denoised_gibbs_crop_preproc.mif \
+echo eddy && time dwipreproc $s/mr_dwi_denoised_gibbs.mif $s/mr_dwi_denoised_gibbs_preproc.mif \
             -pe_dir AP \
             -rpe_none \
             -eddy_options " --niter=8 --fwhm=10,8,4,2,0,0,0,0 --repol --mporder=6 \

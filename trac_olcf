@@ -48,7 +48,7 @@ do
 cat<<EOC >$CMD
 #!/bin/bash
 
-cd \$currentdir/\$s
+cd $currentdir/$s
 #1.
 echo converting && time mrconvert *dwi.nii.gz -force mr_dwi.mif -fslgrad *dwi.bvec *dwi.bval \
             -datatype float32 -stride 0,0,0,1
